@@ -77,6 +77,10 @@ if uploaded_file is not None:
             sheet.add_data_validation(dv_score)
             dv_score.range = f"D2:D{len(df) + 1}"  # Score column
             
+            # Ensure the validation applies to the correct range
+            sheet.column_dimensions['C'].width = 15  # Set width for Supplier Response column
+            sheet.column_dimensions['D'].width = 10  # Set width for Score column
+
         processed_data = output.getvalue()
         return processed_data
 
@@ -100,4 +104,3 @@ if uploaded_file is not None:
         "Score": scores
     })
     st.dataframe(score_df)
-
