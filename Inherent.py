@@ -1,77 +1,58 @@
 import streamlit as st
 import pandas as pd
-import openpyxl
 from io import BytesIO
 
-# File upload widget in Streamlit
-uploaded_file = st.file_uploader("Upload your Excel file", type="xlsx")
-if uploaded_file is not None:
-    # Load data from the uploaded file
+# Function to load the uploaded Excel file
+def load_data(uploaded_file):
     inherent_data = pd.read_excel(uploaded_file, sheet_name="Inherent Risk Assessment")
     mitigation_data = pd.read_excel(uploaded_file, sheet_name="Mitigation Question Bank")
+    return inherent_data, mitigation_data
 
-    # Section 1: Display Inherent Risk Questions
-    st.title("Third Party Risk Management (TPRM) - Inherent Risk Assessment")
+# Stage 1: Upload the Excel file and display inherent risk questions
+st.title("Third Party Risk Management (TPRM) - Inherent Risk Assessment")
 
-    # Ask Inherent Risk Questions (Yes/No)
+# Upload the Excel file
+uploaded_file = st.file_uploader("Upload your Excel file", type="xlsx")
+if uploaded_file is not None:
+    # Load the data from the uploaded file
+    inherent_data, mitigation_data = load_data(uploaded_file)
+    
+    # Stage 1: Ask Inherent Risk Questions (Yes/No)
+    st.header("Inherent Risk Questions")
+
     responses = []
     for index, row in inherent_data.iterrows():
         question = row['Question']
         response = st.radio(f"{question}", ("Yes", "No"))
         responses.append(response)
 
-    # Section 2: Show Mitigation Questions based on Inherent Risk Responses
-    st.header("Mitigation Questions")
-
-    # Filter the mitigation questions based on responses
+    # Generate Mitigation Questions based on Inherent Risk Responses
     mitigation_questions_to_ask = []
-    inherent_scores = []
-
     for idx, response in enumerate(responses):
         if response == "Yes":  # Only ask mitigation questions for "Yes" responses
             inherent_question_id = inherent_data.iloc[idx]["ID"]
             mitigation_questions_for_domain = mitigation_data[mitigation_data['Triggering Question ID'] == inherent_question_id]
             mitigation_questions_to_ask.append(mitigation_questions_for_domain)
-            inherent_scores.extend([3 if response == "Yes" else 0] * len(mitigation_questions_for_domain))
 
-    # Flatten the list of mitigation questions to display
+    # Flatten the list of questions to display
     mitigation_questions_to_ask = pd.concat(mitigation_questions_to_ask)
-
-    # Let user answer mitigation questions and provide scores
-    mitigation_scores = []
-    for idx, row in mitigation_questions_to_ask.iterrows():
-        question = row["Mitigation Question"]
-        response = st.radio(f"{question}", ("Yes", "No"))
-        score = st.selectbox(f"Score for {question}", (0, 1, 2, 3))
-        mitigation_scores.append({"Question": question, "Response": response, "Score": score})
-
-    # Section 3: Summary & Download
-    st.header("Summary & Download")
-
-    # Prepare final data for download (in Excel format)
-    mitigation_summary = pd.DataFrame(mitigation_scores)
-
-    # Prepare final DataFrame
-    final_df = pd.DataFrame({
-        "Inherent Risk Question": inherent_data["Question"].repeat([len(mitigation_questions_to_ask) // len(inherent_data)]),
-        "Inherent Risk Score": inherent_scores,
-        "Mitigation Question": mitigation_summary["Question"],
-        "Mitigation Score": mitigation_summary["Score"]
-    })
-
-    # Convert DataFrame to Excel for download
-    @st.cache
+    
+    # Prepare the Excel file for download with the mitigation questions
+    @st.cache_data
     def to_excel(df):
         output = BytesIO()
-        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-            df.to_excel(writer, index=False, sheet_name="Summary")
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="Mitigation Questions")
         processed_data = output.getvalue()
         return processed_data
 
-    # Provide download link
-    download_button = st.download_button(
-        label="Download Summary",
-        data=to_excel(final_df),
-        file_name="TPRM_Summary.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    # Display a download button for the mitigation questions Excel file
+    if mitigation_questions_to_ask.empty:
+        st.warning("No mitigation questions required based on your responses.")
+    else:
+        st.download_button(
+            label="Download Mitigation Questions",
+            data=to_excel(mitigation_questions_to_ask),
+            file_name="Mitigation_Questions.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
