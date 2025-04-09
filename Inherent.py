@@ -60,22 +60,7 @@ if uploaded_file is not None:
             file_name="Mitigation_Questions_with_Scores.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-Explanation of Stage 1 Changes:
-After displaying the inherent risk questions, the app filters out the relevant mitigation questions (based on the responses).
 
-The mitigation questions table now includes:
-
-Supplier Response column (set to "Pending" by default).
-
-Score column (set to 0 by default).
-
-Download the Excel File: The user can download the Excel file, which includes the mitigation questions, supplier response placeholders, and score placeholders for later input.
-
-Stage 2 Update: Allow Users to Upload Scored Mitigation Questions
-In Stage 2, users will upload the Excel file they edited, which now includes their supplier responses and scores. We'll process the uploaded data to display it.
-
-python
-Copy
 # Stage 2: Upload Scored Mitigation Questions
 st.title("Stage 2: Upload Scored Mitigation Questions")
 
@@ -91,51 +76,3 @@ if uploaded_scored_file is not None:
     else:
         st.write("Scored Mitigation Questions uploaded successfully.")
         st.dataframe(scored_data.head())  # Display the first few rows of the uploaded data
-Explanation of Stage 2:
-Upload Scored File: After the user uploads their file with the responses and scores, the app checks if the required columns are present.
-
-If the file is correct, it displays a preview of the uploaded data.
-
-Stage 3 Update: Summarize the Scoring and Provide Suggested Actions
-In Stage 3, we’ll summarize the Inherent Risk Scores and Mitigation Scores, and provide suggested actions based on the scores.
-
-python
-Copy
-# Stage 3: Summarize Inherent and Mitigation Scores
-st.title("Stage 3: Summarize Inherent and Mitigation Scores")
-
-# Example calculation of scores (Replace with actual scoring logic)
-inherent_scores = [3 if response == "Yes" else 0 for response in responses]
-mitigation_scores = scored_data["Score"].tolist()  # Assuming mitigation scores are available
-
-# Summarize the final scores
-summary_df = pd.DataFrame({
-    "Inherent Risk Question": inherent_data["Question"],
-    "Inherent Risk Score": inherent_scores,
-    "Mitigation Question": scored_data["Question"],
-    "Mitigation Score": mitigation_scores
-})
-
-# Suggested actions based on scoring
-summary_df["Suggested Action"] = summary_df.apply(lambda row: "Escalate to Risk Owner" if row["Mitigation Score"] < 2 else "Monitor and Proceed", axis=1)
-
-# Display the summary
-st.write("Summary of Inherent and Mitigation Scores:")
-st.dataframe(summary_df)
-
-# Provide a download button for the final summary
-@st.cache_data
-def to_excel(df):
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        df.to_excel(writer, index=False, sheet_name="Summary")
-    processed_data = output.getvalue()
-    return processed_data
-
-# Download summary as Excel
-st.download_button(
-    label="Download Final Summary",
-    data=to_excel(summary_df),
-    file_name="Final_Summary.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
