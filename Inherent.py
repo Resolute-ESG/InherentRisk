@@ -10,104 +10,107 @@ def load_data(uploaded_file):
     mitigation_data = pd.read_excel(uploaded_file, sheet_name="Mitigation Question Bank")
     return inherent_data, mitigation_data
 
-# Stage 1: Upload the Excel file and display inherent risk questions
-st.title("Third Party Risk Management (TPRM) - Inherent Risk Assessment")
+# Function to generate the Excel file for download
+@st.cache_data
+def to_excel(df, sheet_name="Mitigation Questions"):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name=sheet_name)
+        workbook = writer.book
+        sheet = workbook[sheet_name]
+        
+        # Add dropdown for Supplier Response ("Yes", "No")
+        dv_response = DataValidation(type="list", formula1='"Yes,No"', showDropDown=True)
+        sheet.add_data_validation(dv_response)
+        dv_response.range = f"C2:C{len(df) + 1}"  # Supplier Response column
+        
+        # Add dropdown for Score (0, 1, 2, 3)
+        dv_score = DataValidation(type="list", formula1='"0,1,2,3"', showDropDown=True)
+        sheet.add_data_validation(dv_score)
+        dv_score.range = f"D2:D{len(df) + 1}"  # Score column
 
-# Upload the Excel file
-uploaded_file = st.file_uploader("Upload your Excel file", type="xlsx")
+        # Set column widths for readability
+        sheet.column_dimensions['C'].width = 15  # Supplier Response column
+        sheet.column_dimensions['D'].width = 10  # Score column
+
+    processed_data = output.getvalue()
+    return processed_data
+
+# Stage 1 and Stage 2 combined
+st.title("Third Party Risk Management (TPRM) - Inherent Risk Assessment & Scoring")
+
+# Step 1: Upload the Inherent Risk Assessment file
+uploaded_file = st.file_uploader("Upload your Inherent Risk Assessment Excel file", type="xlsx")
 if uploaded_file is not None:
     # Load the data from the uploaded file
     inherent_data, mitigation_data = load_data(uploaded_file)
     
-    # Stage 1: Ask Inherent Risk Questions (Yes/No and Positive/Negative)
+    # Stage 1: Display Inherent Risk Questions and allow for 'Yes' or 'No' responses
     st.header("Inherent Risk Questions")
 
     responses = []
-    scores = []
-
     for index, row in inherent_data.iterrows():
         question = row['Question']
         response = st.radio(f"{question} (Yes/No)", ("Yes", "No"))
-        sentiment = st.radio(f"Sentiment for '{question}' (Positive/Negative)", ("Positive", "Negative"))
-
-        # Apply scoring logic based on the response and sentiment
-        if response == "Yes" and sentiment == "Positive":
-            score = 3
-        elif response == "No" and sentiment == "Positive":
-            score = 0
-        elif response == "No" and sentiment == "Negative":
-            score = 3
-        elif response == "Yes" and sentiment == "Negative":
-            score = 0
-
         responses.append(response)
-        scores.append(score)
 
-    # Generate Mitigation Questions based on Inherent Risk Responses
+    # Generate Mitigation Questions based on Inherent Risk Responses (only for 'Yes')
     mitigation_questions_to_ask = []
     for idx, response in enumerate(responses):
-        if response == "Yes":  # Only ask mitigation questions for "Yes" responses
+        if response == "Yes":
             inherent_question_id = inherent_data.iloc[idx]["ID"]
             mitigation_questions_for_domain = mitigation_data[mitigation_data['Triggering Question ID'] == inherent_question_id]
             mitigation_questions_to_ask.append(mitigation_questions_for_domain)
 
-    # Flatten the list of questions to display
+    # Flatten the list of mitigation questions
     mitigation_questions_to_ask = pd.concat(mitigation_questions_to_ask)
     
-    # Add columns for Supplier Response and Score
+    # Add Supplier Response and Score columns (empty for now)
     mitigation_questions_to_ask['Supplier Response'] = 'Pending'
     mitigation_questions_to_ask['Score'] = 0
 
-    # Prepare the Excel file for download with the mitigation questions and dropdown options
-    @st.cache_data
-    def to_excel(df):
-        output = BytesIO()
-        
-        # Step 1: Write data to Excel without data validation
-        with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, sheet_name="Mitigation Questions")
-            workbook = writer.book
-            sheet = workbook["Mitigation Questions"]
-            
-            # Step 2: Apply data validation after writing the data
-            
-            # Add dropdown for Supplier Response ("Yes", "No")
-            dv_response = DataValidation(type="list", formula1='"Yes,No"', showDropDown=True)
-            sheet.add_data_validation(dv_response)
-            dv_response.range = f"C2:C{len(df) + 1}"  # Supplier Response column
-            
-            # Add dropdown for Score (0, 1, 2, 3)
-            dv_score = DataValidation(type="list", formula1='"0,1,2,3"', showDropDown=True)
-            sheet.add_data_validation(dv_score)
-            dv_score.range = f"D2:D{len(df) + 1}"  # Score column
-
-            # Step 3: Ensure proper formatting (column widths)
-            sheet.column_dimensions['C'].width = 20  # Set width for Supplier Response column
-            sheet.column_dimensions['D'].width = 10  # Set width for Score column
-
-            # Ensure the workbook is saved after adding validation
-            workbook.save(output)
-
-        processed_data = output.getvalue()
-        return processed_data
-
-    # Display a download button for the mitigation questions Excel file
+    # Allow the user to download the mitigation questions
     if mitigation_questions_to_ask.empty:
         st.warning("No mitigation questions required based on your responses.")
     else:
         st.download_button(
-            label="Download Mitigation Questions with Response & Score Columns",
+            label="Download Mitigation Questions for Scoring",
             data=to_excel(mitigation_questions_to_ask),
-            file_name="Mitigation_Questions_with_Scores.xlsx",
+            file_name="Mitigation_Questions_for_Scoring.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-    # Display the scores for Inherent Risk Questions
-    st.subheader("Inherent Risk Scores")
-    score_df = pd.DataFrame({
-        "Inherent Risk Question": inherent_data["Question"],
-        "Response": responses,
-        "Sentiment": ["Positive" if r == "Positive" else "Negative" for r in responses],
-        "Score": scores
-    })
-    st.dataframe(score_df)
+    # Step 2: Upload the downloaded Mitigation Questions for Scoring file
+    st.header("Stage 2: Upload the Mitigation Questions for Scoring File")
+
+    uploaded_scored_file = st.file_uploader("Upload the Mitigation Questions for Scoring file", type="xlsx")
+    if uploaded_scored_file is not None:
+        # Load the uploaded file
+        scored_data = pd.read_excel(uploaded_scored_file, sheet_name="Mitigation Questions")
+        
+        # Check if the necessary columns exist
+        if "Supplier Response" not in scored_data.columns or "Score" not in scored_data.columns:
+            st.error("The uploaded file is missing the required columns ('Supplier Response' and 'Score').")
+        else:
+            st.write("Mitigation Questions uploaded successfully.")
+            st.dataframe(scored_data.head())  # Display the first few rows of the uploaded data
+
+            # Stage 2: Allow the user to score the questions inside the app
+            for index, row in scored_data.iterrows():
+                supplier_response = st.selectbox(f"Supplier Response for {row['Mitigation Question']}", ["Yes", "No"], key=f"response_{index}")
+                score = st.selectbox(f"Score for {row['Mitigation Question']}", [0, 1, 2, 3], key=f"score_{index}")
+
+                scored_data.at[index, "Supplier Response"] = supplier_response
+                scored_data.at[index, "Score"] = score
+
+            # Display the scored mitigation questions
+            st.subheader("Scored Mitigation Questions")
+            st.dataframe(scored_data)
+
+            # Option to download the file with supplier responses and scores
+            st.download_button(
+                label="Download Scored Mitigation Questions",
+                data=to_excel(scored_data, sheet_name="Scored Mitigation Questions"),
+                file_name="Scored_Mitigation_Questions.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
