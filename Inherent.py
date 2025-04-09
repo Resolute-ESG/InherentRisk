@@ -10,7 +10,7 @@ def load_data(uploaded_file):
     mitigation_data = pd.read_excel(uploaded_file, sheet_name="Mitigation Question Bank")
     return inherent_data, mitigation_data
 
-# Function to apply the scoring logic based on Supplier Response and sentiment
+# Function to apply the original scoring logic
 def apply_scoring_logic(row):
     if row['Supplier Response'] == "Yes" and row['Sentiment'] == "Positive":
         return 3
@@ -110,12 +110,11 @@ if uploaded_file is not None:
             # Stage 2: Allow the user to score the questions inside the app
             for index, row in scored_data.iterrows():
                 supplier_response = st.selectbox(f"Supplier Response for {row['Mitigation Question']}", ["Yes", "No"], key=f"response_{index}")
-                sentiment = st.selectbox(f"Sentiment for {row['Mitigation Question']}", ["Positive", "Negative"], key=f"sentiment_{index}")
+                score = st.selectbox(f"Score for {row['Mitigation Question']}", [0, 1, 2, 3], key=f"score_{index}")
 
-                # Apply scoring logic based on the Supplier Response and Sentiment
+                # Update the Supplier Response and Score in the data
                 scored_data.at[index, "Supplier Response"] = supplier_response
-                scored_data.at[index, "Sentiment"] = sentiment
-                scored_data.at[index, "Score"] = apply_scoring_logic(scored_data.iloc[index])
+                scored_data.at[index, "Score"] = score
 
             # Display the scored mitigation questions
             st.subheader("Scored Mitigation Questions")
@@ -128,3 +127,20 @@ if uploaded_file is not None:
                 file_name="Scored_Mitigation_Questions.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
+
+    # Step 3: Show Summary and Suggested Actions
+    st.header("Stage 3: Summary and Suggested Actions")
+
+    if 'Score' in scored_data.columns:
+        # Apply the original logic for final scores based on Supplier Response and Score
+        scored_data['Final Score'] = scored_data.apply(apply_scoring_logic, axis=1)
+
+        # Display summary of scores and recommended actions
+        st.subheader("Final Scoring Summary")
+        st.dataframe(scored_data)
+
+        # Suggested actions based on scores
+        if scored_data['Final Score'].max() < 3:
+            st.warning("Some mitigation questions have a low score. It is recommended to escalate.")
+        else:
+            st.success("Mitigation scores are adequate. No escalation required.")
