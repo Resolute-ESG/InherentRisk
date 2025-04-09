@@ -110,9 +110,13 @@ if uploaded_file is not None:
 
             # Stage 2: Allow the user to score the questions inside the app
             for index, row in scored_data.iterrows():
+                # Handle missing or invalid Supplier Response and Sentiment
+                supplier_response = row['Supplier Response'] if row['Supplier Response'] in ["Yes", "No"] else "Yes"  # Default to "Yes" if invalid
+                sentiment = row['Sentiment'] if row['Sentiment'] in ["Positive", "Negative"] else "Positive"  # Default to "Positive" if invalid
+                
                 # Allow user to modify Supplier Response and Score in the app
-                supplier_response = st.selectbox(f"Supplier Response for {row['Mitigation Question']}", ["Yes", "No"], key=f"response_{index}", index=["Yes", "No"].index(row['Supplier Response']))
-                sentiment = st.selectbox(f"Sentiment for {row['Mitigation Question']}", ["Positive", "Negative"], key=f"sentiment_{index}", index=["Positive", "Negative"].index(row['Sentiment']))
+                supplier_response = st.selectbox(f"Supplier Response for {row['Mitigation Question']}", ["Yes", "No"], key=f"response_{index}", index=["Yes", "No"].index(supplier_response))
+                sentiment = st.selectbox(f"Sentiment for {row['Mitigation Question']}", ["Positive", "Negative"], key=f"sentiment_{index}", index=["Positive", "Negative"].index(sentiment))
                 score = st.selectbox(f"Score for {row['Mitigation Question']}", [0, 1, 2, 3], key=f"score_{index}", index=[0, 1, 2, 3].index(row['Score']))
 
                 # Update the Supplier Response, Sentiment, and Score in the data
