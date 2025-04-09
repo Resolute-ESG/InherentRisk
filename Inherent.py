@@ -28,7 +28,6 @@ if uploaded_file is not None:
     for idx, response in enumerate(responses):
         if response == "Yes":  # Only ask mitigation questions for "Yes" responses
             inherent_question_id = inherent_data.iloc[idx]["ID"]
-            domain = inherent_data.iloc[idx]["Risk Domain"]
             mitigation_questions_for_domain = mitigation_data[mitigation_data['Triggering Question ID'] == inherent_question_id]
             mitigation_questions_to_ask.append(mitigation_questions_for_domain)
 
@@ -48,12 +47,17 @@ if uploaded_file is not None:
 
     # Calculate the summary based on Inherent Risk and Mitigation Scores
     inherent_scores = [3 if response == "Yes" else 0 for response in responses]
+
+    # Ensure both inherent and mitigation summary lists have matching lengths for DataFrame construction
     mitigation_summary = pd.DataFrame(mitigation_scores)
+    
+    # Match lengths by repeating inherent questions for the correct number of mitigation questions
+    repeated_inherent_scores = inherent_scores * (len(mitigation_summary) // len(inherent_scores))
 
     # Prepare final data for download (in Excel format)
     final_df = pd.DataFrame({
-        "Inherent Risk Question": inherent_data["Question"],
-        "Inherent Risk Score": inherent_scores,
+        "Inherent Risk Question": inherent_data["Question"].repeat(len(mitigation_summary) // len(inherent_data)),
+        "Inherent Risk Score": repeated_inherent_scores,
         "Mitigation Question": mitigation_summary["Question"],
         "Mitigation Score": mitigation_summary["Score"]
     })
