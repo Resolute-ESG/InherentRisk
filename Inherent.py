@@ -81,11 +81,11 @@ if uploaded_file is not None:
             sheet.add_data_validation(dv_score)
             dv_score.range = f"D2:D{len(df) + 1}"  # Score column
 
-            # Step 3: Ensure proper formatting
-            sheet.column_dimensions['C'].width = 15  # Set width for Supplier Response column
+            # Step 3: Ensure proper formatting (column widths)
+            sheet.column_dimensions['C'].width = 20  # Set width for Supplier Response column
             sheet.column_dimensions['D'].width = 10  # Set width for Score column
 
-            # Ensure proper file structure is preserved
+            # Ensure the workbook is saved after adding validation
             workbook.save(output)
 
         processed_data = output.getvalue()
