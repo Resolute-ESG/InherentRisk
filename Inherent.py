@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
+import openpyxl
+from openpyxl.worksheet.datavalidation import DataValidation
 
 # Function to load the uploaded Excel file
 def load_data(uploaded_file):
@@ -55,13 +57,26 @@ if uploaded_file is not None:
     # Add columns for Supplier Response and Score
     mitigation_questions_to_ask['Supplier Response'] = 'Pending'
     mitigation_questions_to_ask['Score'] = 0
-    
-    # Prepare the Excel file for download with the mitigation questions
+
+    # Prepare the Excel file for download with the mitigation questions and dropdown options
     @st.cache_data
     def to_excel(df):
         output = BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df.to_excel(writer, index=False, sheet_name="Mitigation Questions")
+            workbook = writer.book
+            sheet = workbook["Mitigation Questions"]
+            
+            # Add dropdown for Supplier Response ("Yes", "No")
+            dv_response = DataValidation(type="list", formula1='"Yes,No"', showDropDown=True)
+            sheet.add_data_validation(dv_response)
+            dv_response.range = f"C2:C{len(df) + 1}"  # Supplier Response column
+            
+            # Add dropdown for Score (0, 1, 2, 3)
+            dv_score = DataValidation(type="list", formula1='"0,1,2,3"', showDropDown=True)
+            sheet.add_data_validation(dv_score)
+            dv_score.range = f"D2:D{len(df) + 1}"  # Score column
+            
         processed_data = output.getvalue()
         return processed_data
 
