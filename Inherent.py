@@ -48,18 +48,17 @@ if uploaded_file is not None:
     # Calculate the summary based on Inherent Risk and Mitigation Scores
     inherent_scores = [3 if response == "Yes" else 0 for response in responses]
 
-    # Ensure both inherent and mitigation summary lists have matching lengths for DataFrame construction
-    mitigation_summary = pd.DataFrame(mitigation_scores)
-    
-    # Match lengths by repeating inherent questions for the correct number of mitigation questions
-    repeated_inherent_scores = inherent_scores * (len(mitigation_summary) // len(inherent_scores))
+    # Check if the lengths are consistent
+    if len(inherent_scores) != len(mitigation_scores):
+        st.error(f"Length mismatch between inherent scores ({len(inherent_scores)}) and mitigation scores ({len(mitigation_scores)})")
+        st.stop()
 
     # Prepare final data for download (in Excel format)
     final_df = pd.DataFrame({
-        "Inherent Risk Question": inherent_data["Question"].repeat(len(mitigation_summary) // len(inherent_data)),
-        "Inherent Risk Score": repeated_inherent_scores,
-        "Mitigation Question": mitigation_summary["Question"],
-        "Mitigation Score": mitigation_summary["Score"]
+        "Inherent Risk Question": inherent_data["Question"].repeat(len(mitigation_scores) // len(inherent_data)),
+        "Inherent Risk Score": inherent_scores * (len(mitigation_scores) // len(inherent_scores)),
+        "Mitigation Question": [item["Question"] for item in mitigation_scores],
+        "Mitigation Score": [item["Score"] for item in mitigation_scores]
     })
 
     # Convert DataFrame to Excel for download
