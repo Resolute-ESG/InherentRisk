@@ -17,14 +17,29 @@ if uploaded_file is not None:
     # Load the data from the uploaded file
     inherent_data, mitigation_data = load_data(uploaded_file)
     
-    # Stage 1: Ask Inherent Risk Questions (Yes/No)
+    # Stage 1: Ask Inherent Risk Questions (Yes/No and Positive/Negative)
     st.header("Inherent Risk Questions")
 
     responses = []
+    scores = []
+
     for index, row in inherent_data.iterrows():
         question = row['Question']
-        response = st.radio(f"{question}", ("Yes", "No"))
+        response = st.radio(f"{question} (Yes/No)", ("Yes", "No"))
+        sentiment = st.radio(f"Sentiment for '{question}' (Positive/Negative)", ("Positive", "Negative"))
+
+        # Apply scoring logic based on the response and sentiment
+        if response == "Yes" and sentiment == "Positive":
+            score = 3
+        elif response == "No" and sentiment == "Positive":
+            score = 0
+        elif response == "No" and sentiment == "Negative":
+            score = 3
+        elif response == "Yes" and sentiment == "Negative":
+            score = 0
+
         responses.append(response)
+        scores.append(score)
 
     # Generate Mitigation Questions based on Inherent Risk Responses
     mitigation_questions_to_ask = []
@@ -61,18 +76,13 @@ if uploaded_file is not None:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-# Stage 2: Upload Scored Mitigation Questions
-st.title("Stage 2: Upload Scored Mitigation Questions")
+    # Display the scores for Inherent Risk Questions
+    st.subheader("Inherent Risk Scores")
+    score_df = pd.DataFrame({
+        "Inherent Risk Question": inherent_data["Question"],
+        "Response": responses,
+        "Sentiment": ["Positive" if r == "Positive" else "Negative" for r in responses],
+        "Score": scores
+    })
+    st.dataframe(score_df)
 
-# Upload the scored mitigation questions file
-uploaded_scored_file = st.file_uploader("Upload the file with scored mitigation questions", type="xlsx")
-if uploaded_scored_file is not None:
-    # Load the data from the uploaded scored mitigation questions file
-    scored_data = pd.read_excel(uploaded_scored_file, sheet_name="Mitigation Questions")
-    
-    # Check if the necessary columns exist
-    if "Supplier Response" not in scored_data.columns or "Score" not in scored_data.columns:
-        st.error("The uploaded file is missing the required columns ('Supplier Response' and 'Score').")
-    else:
-        st.write("Scored Mitigation Questions uploaded successfully.")
-        st.dataframe(scored_data.head())  # Display the first few rows of the uploaded data
