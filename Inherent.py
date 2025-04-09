@@ -25,13 +25,16 @@ if uploaded_file is not None:
 
     # Filter the mitigation questions based on responses
     mitigation_questions_to_ask = []
+    inherent_scores = []
+
     for idx, response in enumerate(responses):
         if response == "Yes":  # Only ask mitigation questions for "Yes" responses
             inherent_question_id = inherent_data.iloc[idx]["ID"]
             mitigation_questions_for_domain = mitigation_data[mitigation_data['Triggering Question ID'] == inherent_question_id]
             mitigation_questions_to_ask.append(mitigation_questions_for_domain)
+            inherent_scores.extend([3 if response == "Yes" else 0] * len(mitigation_questions_for_domain))
 
-    # Flatten the list of questions to display
+    # Flatten the list of mitigation questions to display
     mitigation_questions_to_ask = pd.concat(mitigation_questions_to_ask)
 
     # Let user answer mitigation questions and provide scores
@@ -45,20 +48,15 @@ if uploaded_file is not None:
     # Section 3: Summary & Download
     st.header("Summary & Download")
 
-    # Calculate the summary based on Inherent Risk and Mitigation Scores
-    inherent_scores = [3 if response == "Yes" else 0 for response in responses]
-
-    # Check if the lengths are consistent
-    if len(inherent_scores) != len(mitigation_scores):
-        st.error(f"Length mismatch between inherent scores ({len(inherent_scores)}) and mitigation scores ({len(mitigation_scores)})")
-        st.stop()
-
     # Prepare final data for download (in Excel format)
+    mitigation_summary = pd.DataFrame(mitigation_scores)
+
+    # Prepare final DataFrame
     final_df = pd.DataFrame({
-        "Inherent Risk Question": inherent_data["Question"].repeat(len(mitigation_scores) // len(inherent_data)),
-        "Inherent Risk Score": inherent_scores * (len(mitigation_scores) // len(inherent_scores)),
-        "Mitigation Question": [item["Question"] for item in mitigation_scores],
-        "Mitigation Score": [item["Score"] for item in mitigation_scores]
+        "Inherent Risk Question": inherent_data["Question"].repeat([len(mitigation_questions_to_ask) // len(inherent_data)]),
+        "Inherent Risk Score": inherent_scores,
+        "Mitigation Question": mitigation_summary["Question"],
+        "Mitigation Score": mitigation_summary["Score"]
     })
 
     # Convert DataFrame to Excel for download
