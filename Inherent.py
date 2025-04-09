@@ -79,6 +79,7 @@ if uploaded_file is not None:
     
     # Add Supplier Response and Score columns (empty for now)
     mitigation_questions_to_ask['Supplier Response'] = 'Pending'
+    mitigation_questions_to_ask['Sentiment'] = 'Pending'  # Add Sentiment column
     mitigation_questions_to_ask['Score'] = 0
 
     # Allow the user to download the mitigation questions
@@ -109,11 +110,14 @@ if uploaded_file is not None:
 
             # Stage 2: Allow the user to score the questions inside the app
             for index, row in scored_data.iterrows():
-                supplier_response = st.selectbox(f"Supplier Response for {row['Mitigation Question']}", ["Yes", "No"], key=f"response_{index}")
-                score = st.selectbox(f"Score for {row['Mitigation Question']}", [0, 1, 2, 3], key=f"score_{index}")
+                # Allow user to modify Supplier Response and Score in the app
+                supplier_response = st.selectbox(f"Supplier Response for {row['Mitigation Question']}", ["Yes", "No"], key=f"response_{index}", index=["Yes", "No"].index(row['Supplier Response']))
+                sentiment = st.selectbox(f"Sentiment for {row['Mitigation Question']}", ["Positive", "Negative"], key=f"sentiment_{index}", index=["Positive", "Negative"].index(row['Sentiment']))
+                score = st.selectbox(f"Score for {row['Mitigation Question']}", [0, 1, 2, 3], key=f"score_{index}", index=[0, 1, 2, 3].index(row['Score']))
 
-                # Update the Supplier Response and Score in the data
+                # Update the Supplier Response, Sentiment, and Score in the data
                 scored_data.at[index, "Supplier Response"] = supplier_response
+                scored_data.at[index, "Sentiment"] = sentiment
                 scored_data.at[index, "Score"] = score
 
             # Display the scored mitigation questions
