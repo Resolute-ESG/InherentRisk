@@ -10,6 +10,18 @@ def load_data(uploaded_file):
     mitigation_data = pd.read_excel(uploaded_file, sheet_name="Mitigation Question Bank")
     return inherent_data, mitigation_data
 
+# Function to apply the scoring logic based on Supplier Response and sentiment
+def apply_scoring_logic(row):
+    if row['Supplier Response'] == "Yes" and row['Sentiment'] == "Positive":
+        return 3
+    elif row['Supplier Response'] == "No" and row['Sentiment'] == "Positive":
+        return 0
+    elif row['Supplier Response'] == "No" and row['Sentiment'] == "Negative":
+        return 3
+    elif row['Supplier Response'] == "Yes" and row['Sentiment'] == "Negative":
+        return 0
+    return 0  # Default case
+
 # Function to generate the Excel file for download
 @st.cache_data
 def to_excel(df, sheet_name="Mitigation Questions"):
@@ -98,10 +110,12 @@ if uploaded_file is not None:
             # Stage 2: Allow the user to score the questions inside the app
             for index, row in scored_data.iterrows():
                 supplier_response = st.selectbox(f"Supplier Response for {row['Mitigation Question']}", ["Yes", "No"], key=f"response_{index}")
-                score = st.selectbox(f"Score for {row['Mitigation Question']}", [0, 1, 2, 3], key=f"score_{index}")
+                sentiment = st.selectbox(f"Sentiment for {row['Mitigation Question']}", ["Positive", "Negative"], key=f"sentiment_{index}")
 
+                # Apply scoring logic based on the Supplier Response and Sentiment
                 scored_data.at[index, "Supplier Response"] = supplier_response
-                scored_data.at[index, "Score"] = score
+                scored_data.at[index, "Sentiment"] = sentiment
+                scored_data.at[index, "Score"] = apply_scoring_logic(scored_data.iloc[index])
 
             # Display the scored mitigation questions
             st.subheader("Scored Mitigation Questions")
