@@ -38,18 +38,3 @@ if uploaded_file is not None:
         elif response == "No" and sentiment == "Negative":
             score = 3
         elif response == "Yes" and sentiment == "Negative":
-            score = 0
-
-        responses.append(response)
-        scores.append(score)
-
-    # Generate Mitigation Questions based on Inherent Risk Responses
-    mitigation_questions_to_ask = []
-    for idx, response in enumerate(responses):
-        if response == "Yes":  # Only ask mitigation questions for "Yes" responses
-            inherent_question_id = inherent_data.iloc[idx]["ID"]
-            mitigation_questions_for_domain = mitigation_data[mitigation_data['Triggering Question ID'] == inherent_question_id]
-            mitigation_questions_to_ask.append(mitigation_questions_for_domain)
-
-    # Flatten the list of questions to display
-    mitigation
