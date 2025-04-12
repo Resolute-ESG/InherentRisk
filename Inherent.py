@@ -4,16 +4,11 @@ from io import BytesIO
 import openpyxl
 from openpyxl.worksheet.datavalidation import DataValidation
 
-# Function to load the uploaded Excel file or base file
-def load_data(uploaded_file=None):
-    if uploaded_file:
-        inherent_data = pd.read_excel(uploaded_file, sheet_name="Inherent Risk Assessment")
-        mitigation_data = pd.read_excel(uploaded_file, sheet_name="Mitigation Question Bank")
-    else:
-        # Load the default base Excel file embedded in the app
-        inherent_data = pd.read_excel("base_inherent_risk.xlsx", sheet_name="Inherent Risk Assessment")
-        mitigation_data = pd.read_excel("base_inherent_risk.xlsx", sheet_name="Mitigation Question Bank")
-    
+# Function to load the uploaded Excel file or the embedded base file
+def load_data():
+    # Load the default base Excel file embedded in the app
+    inherent_data = pd.read_excel("base_inherent_risk.xlsx", sheet_name="Inherent Risk Assessment")
+    mitigation_data = pd.read_excel("base_inherent_risk.xlsx", sheet_name="Mitigation Question Bank")
     return inherent_data, mitigation_data
 
 # Function to apply the original scoring logic
@@ -57,27 +52,27 @@ def to_excel(df, sheet_name="Mitigation Questions"):
 # Stage 1 and Stage 2 combined
 st.title("Third Party Risk Management (TPRM) - Inherent Risk Assessment & Scoring")
 
-# Step 1: Upload the Inherent Risk Assessment file or use the default base file
-st.header("Inherent Risk Assessment")
-
-# Option to upload an alternative file or use the base file
-uploaded_file = st.file_uploader("Upload your Inherent Risk Assessment Excel file (optional)", type="xlsx")
-if uploaded_file is None:
-    st.info("No file uploaded. Using the default embedded file.")
-else:
-    st.info("Custom file uploaded. Using the provided file.")
-
-# Load data (either uploaded or default base sheet)
-inherent_data, mitigation_data = load_data(uploaded_file)
+# Load the default data
+inherent_data, mitigation_data = load_data()
 
 # Stage 1: Display Inherent Risk Questions and allow for 'Yes' or 'No' responses
 st.header("Inherent Risk Questions")
 
-responses = []
-for index, row in inherent_data.iterrows():
-    question = row['Question']
-    response = st.radio(f"{question} (Yes/No)", ("Yes", "No"))
-    responses.append(response)
+# Group questions by their section
+if 'Section' in inherent_data.columns:
+    sections = inherent_data['Section'].unique()
+    
+    responses = []
+    for section in sections:
+        st.subheader(f"Section: {section}")
+        
+        section_data = inherent_data[inherent_data['Section'] == section]
+        for index, row in section_data.iterrows():
+            question = row['Question']
+            response = st.radio(f"{question} (Yes/No)", ("Yes", "No"))
+            responses.append(response)
+else:
+    st.warning("The uploaded data doesn't include a 'Section' column. Grouping by sections will not be possible.")
 
 # Generate Mitigation Questions based on Inherent Risk Responses (only for 'Yes')
 mitigation_questions_to_ask = []
