@@ -190,13 +190,3 @@ if uploaded_scored_file is not None:
             file_name="Scored_Mitigation_Questions.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-
-# Step 3: Show Summary and Suggested Actions, only if the uploaded scored data exists
-if scored_data is not None and 'Score' in scored_data.columns:
-    st.header("Stage 3: Summary and Suggested Actions")
-    
-    # Apply the original logic for final scores based on Supplier Response and Score
-    scored_data['Final Score'] = scored_data.apply(apply_scoring_logic, axis=1)
-
-    # Display summary of scores and recommended actions
-    st.subheader("Final Scoring Summary")
