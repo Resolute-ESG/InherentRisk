@@ -20,9 +20,9 @@ def load_data(uploaded_file):
     
     return inherent_data, mitigation_data
 
-# Function to apply the original scoring logic
+# Function to apply the original scoring logic (Auto-Scored Logic)
 def apply_scoring_logic(supplier_response, sentiment):
-    """ This function applies the scoring logic based on Supplier Response and Sentiment """
+    """ This function applies the auto-scoring logic based on Supplier Response and Sentiment """
     if supplier_response == "Yes" and sentiment == "Positive":
         return 3
     elif supplier_response == "No" and sentiment == "Positive":
