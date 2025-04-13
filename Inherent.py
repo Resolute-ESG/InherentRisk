@@ -111,70 +111,85 @@ st.header("Stage 2: Upload the Mitigation Questions for Scoring File")
 uploaded_scored_file = st.file_uploader("Upload the Mitigation Questions for Scoring file", type="xlsx")
 scored_data = None
 if uploaded_scored_file is not None:
-    # Load the uploaded file
-    scored_data = pd.read_excel(uploaded_scored_file, sheet_name="Mitigation Questions")
+    # Load the uploaded file and list sheet names
+    try:
+        # List all sheet names
+        xls = pd.ExcelFile(uploaded_scored_file)
+        sheet_names = xls.sheet_names
+        st.write(f"Sheets available in the uploaded file: {sheet_names}")
+        
+        # Check if the "Mitigation Questions" sheet exists
+        if "Mitigation Questions" in sheet_names:
+            scored_data = pd.read_excel(uploaded_scored_file, sheet_name="Mitigation Questions")
+        else:
+            st.error("The 'Mitigation Questions' sheet is not found in the uploaded file. Please check the sheet name.")
+            scored_data = None
+        
+    except Exception as e:
+        st.error(f"Error loading the file: {e}")
     
-    # Check if the necessary columns exist, and if not, add them
-    if "Supplier Response" not in scored_data.columns:
-        scored_data['Supplier Response'] = 'Pending'  # Add if missing
-    if "Sentiment" not in scored_data.columns:
-        scored_data['Sentiment'] = 'Pending'  # Add if missing
-    if "Score" not in scored_data.columns:
-        scored_data['Score'] = 0  # Add if missing
-    
-    # Display the first few rows of the uploaded data
-    st.write("Mitigation Questions uploaded successfully.")
-    st.dataframe(scored_data.head())  # Display the first few rows of the uploaded data
-
-    # Stage 2: Allow the user to score the questions inside the app
-    for index, row in scored_data.iterrows():
-        # Handle missing or invalid Supplier Response and Sentiment
-        supplier_response = row['Supplier Response'] if row['Supplier Response'] in ["Yes", "No"] else "Yes"  # Default to "Yes" if invalid
-        sentiment = row['Sentiment'] if row['Sentiment'] in ["Positive", "Negative"] else "Positive"  # Default to "Positive" if invalid
+    if scored_data is not None:
+        # Check if the necessary columns exist, and if not, add them
+        if "Supplier Response" not in scored_data.columns:
+            scored_data['Supplier Response'] = 'Pending'  # Add if missing
+        if "Sentiment" not in scored_data.columns:
+            scored_data['Sentiment'] = 'Pending'  # Add if missing
+        if "Score" not in scored_data.columns:
+            scored_data['Score'] = 0  # Add if missing
         
-        # Use a more robust key that combines index and the question to ensure uniqueness
-        key_response = f"response_{index}_{row['Mitigation Question']}"
-        key_sentiment = f"sentiment_{index}_{row['Mitigation Question']}"
-        key_score = f"score_{index}_{row['Mitigation Question']}"
+        # Display the first few rows of the uploaded data
+        st.write("Mitigation Questions uploaded successfully.")
+        st.dataframe(scored_data.head())  # Display the first few rows of the uploaded data
 
-        # Allow user to modify Supplier Response and Score in the app
-        supplier_response = st.selectbox(
-            f"Supplier Response for {row['Mitigation Question']}", 
-            ["Yes", "No"], 
-            key=key_response, 
-            index=["Yes", "No"].index(supplier_response)
+        # Stage 2: Allow the user to score the questions inside the app
+        for index, row in scored_data.iterrows():
+            # Handle missing or invalid Supplier Response and Sentiment
+            supplier_response = row['Supplier Response'] if row['Supplier Response'] in ["Yes", "No"] else "Yes"  # Default to "Yes" if invalid
+            sentiment = row['Sentiment'] if row['Sentiment'] in ["Positive", "Negative"] else "Positive"  # Default to "Positive" if invalid
+            
+            # Use a more robust key that combines index and the question to ensure uniqueness
+            key_response = f"response_{index}_{row['Mitigation Question']}"
+            key_sentiment = f"sentiment_{index}_{row['Mitigation Question']}"
+            key_score = f"score_{index}_{row['Mitigation Question']}"
+
+            # Allow user to modify Supplier Response and Score in the app
+            supplier_response = st.selectbox(
+                f"Supplier Response for {row['Mitigation Question']}", 
+                ["Yes", "No"], 
+                key=key_response, 
+                index=["Yes", "No"].index(supplier_response)
+            )
+            
+            sentiment = st.selectbox(
+                f"Sentiment for {row['Mitigation Question']}", 
+                ["Positive", "Negative"], 
+                key=key_sentiment, 
+                index=["Positive", "Negative"].index(sentiment)
+            )
+            
+            score = st.selectbox(
+                f"Score for {row['Mitigation Question']}", 
+                [0, 1, 2, 3], 
+                key=key_score, 
+                index=[0, 1, 2, 3].index(row['Score'])
+            )
+
+            # Update the Supplier Response, Sentiment, and Score in the data
+            scored_data.at[index, "Supplier Response"] = supplier_response
+            scored_data.at[index, "Sentiment"] = sentiment
+            scored_data.at[index, "Score"] = score
+
+        # Display the scored mitigation questions
+        st.subheader("Scored Mitigation Questions")
+        st.dataframe(scored_data)
+
+        # Option to download the file with supplier responses and scores
+        st.download_button(
+            label="Download Scored Mitigation Questions",
+            data=to_excel(scored_data, sheet_name="Scored Mitigation Questions"),
+            file_name="Scored_Mitigation_Questions.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        
-        sentiment = st.selectbox(
-            f"Sentiment for {row['Mitigation Question']}", 
-            ["Positive", "Negative"], 
-            key=key_sentiment, 
-            index=["Positive", "Negative"].index(sentiment)
-        )
-        
-        score = st.selectbox(
-            f"Score for {row['Mitigation Question']}", 
-            [0, 1, 2, 3], 
-            key=key_score, 
-            index=[0, 1, 2, 3].index(row['Score'])
-        )
-
-        # Update the Supplier Response, Sentiment, and Score in the data
-        scored_data.at[index, "Supplier Response"] = supplier_response
-        scored_data.at[index, "Sentiment"] = sentiment
-        scored_data.at[index, "Score"] = score
-
-    # Display the scored mitigation questions
-    st.subheader("Scored Mitigation Questions")
-    st.dataframe(scored_data)
-
-    # Option to download the file with supplier responses and scores
-    st.download_button(
-        label="Download Scored Mitigation Questions",
-        data=to_excel(scored_data, sheet_name="Scored Mitigation Questions"),
-        file_name="Scored_Mitigation_Questions.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
 
 # Step 3: Show Summary and Suggested Actions, only if the uploaded scored data exists
 if scored_data is not None and 'Score' in scored_data.columns:
@@ -185,10 +200,3 @@ if scored_data is not None and 'Score' in scored_data.columns:
 
     # Display summary of scores and recommended actions
     st.subheader("Final Scoring Summary")
-    st.dataframe(scored_data)
-
-    # Suggested actions based on scores
-    if scored_data['Final Score'].max() < 3:
-        st.warning("Some mitigation questions have a low score. It is recommended to escalate.")
-    else:
-        st.success("Mitigation scores are adequate. No escalation required.")
