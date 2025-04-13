@@ -213,4 +213,9 @@ if scored_data is not None and 'Score' in scored_data.columns:
     st.dataframe(scored_data)
 
     # Suggested actions based on scores
-    st.subheader("Suggested
+    st.subheader("Suggested Actions")
+    for index, row in scored_data.iterrows():
+        if row['Final Score'] == 0:
+            st.warning(f"Question: {row['Mitigation Question']} - **Escalation Recommended**")
+        elif row['Final Score'] == 3:
+            st.success(f"Question: {
