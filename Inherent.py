@@ -184,9 +184,4 @@ if uploaded_scored_file is not None:
         st.dataframe(scored_data)
 
         # Option to download the file with supplier responses and scores
-        st.download_button(
-            label="Download Scored Mitigation Questions",
-            data=to_excel(scored_data, sheet_name="Scored Mitigation Questions"),
-            file_name="Scored_Mitigation_Questions.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+       
