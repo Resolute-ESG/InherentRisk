@@ -21,15 +21,15 @@ def load_data(uploaded_file):
     return inherent_data, mitigation_data
 
 # Function to apply the original scoring logic
-def apply_scoring_logic(row):
+def apply_scoring_logic(supplier_response, sentiment):
     """ This function applies the scoring logic based on Supplier Response and Sentiment """
-    if row['Supplier Response'] == "Yes" and row['Sentiment'] == "Positive":
+    if supplier_response == "Yes" and sentiment == "Positive":
         return 3
-    elif row['Supplier Response'] == "No" and row['Sentiment'] == "Positive":
+    elif supplier_response == "No" and sentiment == "Positive":
         return 0
-    elif row['Supplier Response'] == "No" and row['Sentiment'] == "Negative":
+    elif supplier_response == "No" and sentiment == "Negative":
         return 3
-    elif row['Supplier Response'] == "Yes" and row['Sentiment'] == "Negative":
+    elif supplier_response == "Yes" and sentiment == "Negative":
         return 0
     return 0  # Default case if no conditions match
 
