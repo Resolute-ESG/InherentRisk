@@ -70,21 +70,21 @@ inherent_data, mitigation_data = load_data(uploaded_file)
 # Stage 1: Display Inherent Risk Questions and allow for 'Yes' or 'No' responses
 st.header("Inherent Risk Questions")
 
-# Group questions by their section
-if 'Section' in inherent_data.columns:
-    sections = inherent_data['Section'].unique()
+# Group questions by their Risk Domain
+if 'Risk Domain' in inherent_data.columns:
+    risk_domains = inherent_data['Risk Domain'].unique()
     
     responses = []
-    for section in sections:
-        st.subheader(f"Section: {section}")
+    for domain in risk_domains:
+        st.subheader(f"Risk Domain: {domain}")
         
-        section_data = inherent_data[inherent_data['Section'] == section]
-        for index, row in section_data.iterrows():
+        domain_data = inherent_data[inherent_data['Risk Domain'] == domain]
+        for index, row in domain_data.iterrows():
             question = row['Question']
             response = st.radio(f"{question} (Yes/No)", ("Yes", "No"))
             responses.append(response)
 else:
-    st.warning("The uploaded data doesn't include a 'Section' column. Grouping by sections will not be possible.")
+    st.warning("The uploaded data doesn't include a 'Risk Domain' column. Grouping by Risk Domains will not be possible.")
 
 # Generate Mitigation Questions based on Inherent Risk Responses (only for 'Yes')
 mitigation_questions_to_ask = []
