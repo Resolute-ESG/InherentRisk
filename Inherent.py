@@ -6,14 +6,19 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 # Function to load the uploaded Excel file or the embedded base file
 def load_data(uploaded_file=None):
-    if uploaded_file:
-        # Load the user-uploaded file (using the new file name)
-        inherent_data = pd.read_excel(uploaded_file, sheet_name="Inherent Risk Assessment")
-        mitigation_data = pd.read_excel(uploaded_file, sheet_name="Mitigation Question Bank")
-    else:
-        # Load the default base Excel file embedded in the app (use the new file name here if it's saved locally)
-        inherent_data = pd.read_excel("TPRM Final Version Inherent Risk and Mitigation Scoring.xlsx", sheet_name="Inherent Risk Assessment")
-        mitigation_data = pd.read_excel("TPRM Final Version Inherent Risk and Mitigation Scoring.xlsx", sheet_name="Mitigation Question Bank")
+    try:
+        if uploaded_file:
+            # Load the user-uploaded file
+            inherent_data = pd.read_excel(uploaded_file, sheet_name="Inherent Risk Assessment")
+            mitigation_data = pd.read_excel(uploaded_file, sheet_name="Mitigation Question Bank")
+        else:
+            # Load the default base Excel file embedded in the app (use the correct path if needed)
+            inherent_data = pd.read_excel("TPRM Final Version Inherent Risk and Mitigation Scoring.xlsx", sheet_name="Inherent Risk Assessment")
+            mitigation_data = pd.read_excel("TPRM Final Version Inherent Risk and Mitigation Scoring.xlsx", sheet_name="Mitigation Question Bank")
+    
+    except FileNotFoundError:
+        st.error("The base file 'TPRM Final Version Inherent Risk and Mitigation Scoring.xlsx' is missing. Please ensure the file is in the correct path.")
+        return None, None
     
     return inherent_data, mitigation_data
 
