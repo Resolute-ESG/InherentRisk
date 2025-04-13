@@ -20,6 +20,10 @@ def load_data(uploaded_file=None):
         st.error("The base file 'TPRM Final Version Inherent Risk and Mitigation Scoring.xlsx' is missing. Please ensure the file is in the correct path.")
         return None, None
     
+    # Strip any extra spaces from column names to avoid issues
+    inherent_data.columns = inherent_data.columns.str.strip()
+    mitigation_data.columns = mitigation_data.columns.str.strip()
+    
     return inherent_data, mitigation_data
 
 # Function to apply the original scoring logic
@@ -85,6 +89,11 @@ if 'Risk Domain' in inherent_data.columns:
             responses.append(response)
 else:
     st.warning("The uploaded data doesn't include a 'Risk Domain' column. Grouping by Risk Domains will not be possible.")
+    # If no 'Risk Domain' column exists, handle as a fallback (e.g., displaying all questions)
+    for index, row in inherent_data.iterrows():
+        question = row['Question']
+        response = st.radio(f"{question} (Yes/No)", ("Yes", "No"))
+        responses.append(response)
 
 # Generate Mitigation Questions based on Inherent Risk Responses (only for 'Yes')
 mitigation_questions_to_ask = []
