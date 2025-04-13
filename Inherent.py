@@ -104,6 +104,10 @@ if uploaded_file is not None:
         mitigation_questions_to_ask['Sentiment'] = 'Pending'  # Add Sentiment column
         mitigation_questions_to_ask['Score'] = 0  # Add Score column here
 
+        # Ensure 'Mitigation Type' column exists and assign default if missing
+        if 'Mitigation Type' not in mitigation_questions_to_ask.columns:
+            mitigation_questions_to_ask['Mitigation Type'] = 'User Scored'  # Default to 'User Scored'
+
         # Allow the user to download the mitigation questions
         if not mitigation_questions_to_ask.empty:
             st.download_button(
@@ -146,6 +150,8 @@ if uploaded_scored_file is not None:
             scored_data['Sentiment'] = 'Pending'  # Add if missing
         if "Score" not in scored_data.columns:
             scored_data['Score'] = 0  # Add if missing
+        if "Mitigation Type" not in scored_data.columns:
+            scored_data['Mitigation Type'] = 'User Scored'  # Default Mitigation Type to User Scored if missing
         
         # Display the first few rows of the uploaded data
         st.write("Mitigation Questions uploaded successfully.")
