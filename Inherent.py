@@ -20,6 +20,19 @@ def load_data(uploaded_file):
     
     return inherent_data, mitigation_data
 
+# Function to apply the original scoring logic
+def apply_scoring_logic(row):
+    """ This function applies the scoring logic based on Supplier Response and Sentiment """
+    if row['Supplier Response'] == "Yes" and row['Sentiment'] == "Positive":
+        return 3
+    elif row['Supplier Response'] == "No" and row['Sentiment'] == "Positive":
+        return 0
+    elif row['Supplier Response'] == "No" and row['Sentiment'] == "Negative":
+        return 3
+    elif row['Supplier Response'] == "Yes" and row['Sentiment'] == "Negative":
+        return 0
+    return 0  # Default case if no conditions match
+
 # Function to generate the Excel file for download
 @st.cache_data
 def to_excel(df, sheet_name="Mitigation Questions"):
