@@ -199,4 +199,11 @@ if scored_data is not None and 'Score' in scored_data.columns:
     scored_data['Final Score'] = scored_data.apply(apply_scoring_logic, axis=1)
 
     # Display summary of scores and recommended actions
-    st.subheader("
+    st.subheader("Final Scoring Summary")
+    st.dataframe(scored_data)
+
+    # Suggested actions based on scores
+    if scored_data['Final Score'].max() < 3:
+        st.warning("Some mitigation questions have a low score. It is recommended to escalate.")
+    else:
+        st.success("Mitigation scores are adequate. No escalation required.")
