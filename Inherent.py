@@ -220,4 +220,6 @@ if scored_data is not None and 'Score' in scored_data.columns:
         if row['Final Score'] == 0:
             st.warning(f"Question: {row['Mitigation Question']} - **Escalation Recommended**")
         elif row['Final Score'] == 3:
-            st.success(f"Question: {row['
+            st.success(f"Question: {row['Mitigation Question']} - **No Escalation Needed**")
+        else:
+            st.info(f"Question: {row['Mitigation Question']} - **Please review mitigation**")
