@@ -199,4 +199,25 @@ if uploaded_scored_file is not None:
         st.download_button(
             label="Download Scored Mitigation Questions",
             data=to_excel(scored_data, sheet_name="Scored Mitigation Questions"),
-            file_name="Sc
+            file_name="Scored_Mitigation_Questions.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+# Step 3: Show Summary and Suggested Actions, only if the uploaded scored data exists
+if scored_data is not None and 'Score' in scored_data.columns:
+    st.header("Stage 3: Summary and Suggested Actions")
+    
+    # Apply the original logic for final scores based on Supplier Response and Score
+    scored_data['Final Score'] = scored_data.apply(lambda row: apply_scoring_logic(row['Supplier Response'], row['Sentiment']) if row['Mitigation Type'] == 'Auto Scored' else row['Score'], axis=1)
+
+    # Display summary of scores and recommended actions
+    st.subheader("Final Scoring Summary")
+    st.dataframe(scored_data)
+
+    # Suggested actions based on scores
+    st.subheader("Suggested Actions")
+    for index, row in scored_data.iterrows():
+        if row['Final Score'] == 0:
+            st.warning(f"Question: {row['Mitigation Question']} - **Escalation Recommended**")
+        elif row['Final Score'] == 3:
+            st.success(f"Question: {row['
