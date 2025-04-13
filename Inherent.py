@@ -20,9 +20,9 @@ def load_data(uploaded_file):
     
     return inherent_data, mitigation_data
 
-# Function to apply the original scoring logic (Auto-Scored Logic)
+# Function to apply the original scoring logic for auto-scored questions
 def apply_scoring_logic(supplier_response, sentiment):
-    """ This function applies the auto-scoring logic based on Supplier Response and Sentiment """
+    """ This function applies the scoring logic based on Supplier Response and Sentiment """
     if supplier_response == "Yes" and sentiment == "Positive":
         return 3
     elif supplier_response == "No" and sentiment == "Positive":
@@ -33,7 +33,7 @@ def apply_scoring_logic(supplier_response, sentiment):
         return 0
     return 0  # Default case if no conditions match
 
-# Function to generate the Excel file for download
+# Function to generate the Excel file for download with dropdowns
 @st.cache_data
 def to_excel(df, sheet_name="Mitigation Questions"):
     output = BytesIO()
