@@ -20,7 +20,7 @@ def load_data(uploaded_file):
     
     return inherent_data, mitigation_data
 
-# Function to apply the original scoring logic
+# Function to apply the original scoring logic for auto-scored questions
 def apply_scoring_logic(supplier_response, sentiment):
     """ This function applies the scoring logic based on Supplier Response and Sentiment """
     if supplier_response == "Yes" and sentiment == "Positive":
@@ -33,7 +33,7 @@ def apply_scoring_logic(supplier_response, sentiment):
         return 0
     return 0  # Default case if no conditions match
 
-# Function to generate the Excel file for download
+# Function to generate the Excel file for download with dropdowns
 @st.cache_data
 def to_excel(df, sheet_name="Mitigation Questions"):
     output = BytesIO()
@@ -195,3 +195,24 @@ if uploaded_scored_file is not None:
             file_name="Scored_Mitigation_Questions.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
+# Step 3: Show Summary and Suggested Actions, only if the uploaded scored data exists
+if scored_data is not None and 'Score' in scored_data.columns:
+    st.header("Stage 3: Summary and Suggested Actions")
+    
+    # Apply the original logic for final scores based on Supplier Response and Score
+    scored_data['Final Score'] = scored_data.apply(lambda row: apply_scoring_logic(row['Supplier Response'], row['Sentiment']) if row['Mitigation Type'] == 'Auto Scored' else row['Score'], axis=1)
+
+    # Display summary of scores and recommended actions
+    st.subheader("Final Scoring Summary")
+    st.dataframe(scored_data)
+
+    # Suggested actions based on scores
+    st.subheader("Suggested Actions")
+    for index, row in scored_data.iterrows():
+        if row['Final Score'] == 0:
+            st.warning(f"Question: {row['Mitigation Question']} - **Escalation Recommended**")
+        elif row['Final Score'] == 3:
+            st.success(f"Question: {row['Mitigation Question']} - **No Escalation Needed**")
+        else:
+            st.info(f"Question: {row['Mitigation Question']} - **Please review mitigation**")
