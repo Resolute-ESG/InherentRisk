@@ -20,7 +20,7 @@ def load_data(uploaded_file):
     
     return inherent_data, mitigation_data
 
-# Function to apply the original scoring logic for auto-scored questions
+# Function to apply the original scoring logic
 def apply_scoring_logic(supplier_response, sentiment):
     """ This function applies the scoring logic based on Supplier Response and Sentiment """
     if supplier_response == "Yes" and sentiment == "Positive":
@@ -33,7 +33,7 @@ def apply_scoring_logic(supplier_response, sentiment):
         return 0
     return 0  # Default case if no conditions match
 
-# Function to generate the Excel file for download with dropdowns
+# Function to generate the Excel file for download
 @st.cache_data
 def to_excel(df, sheet_name="Mitigation Questions"):
     output = BytesIO()
@@ -146,8 +146,6 @@ if uploaded_scored_file is not None:
             scored_data['Sentiment'] = 'Pending'  # Add if missing
         if "Score" not in scored_data.columns:
             scored_data['Score'] = 0  # Add if missing
-        if "Mitigation Type" not in scored_data.columns:
-            scored_data['Mitigation Type'] = 'User Scored'  # Default Mitigation Type to User Scored if missing
         
         # Display the first few rows of the uploaded data
         st.write("Mitigation Questions uploaded successfully.")
@@ -179,12 +177,7 @@ if uploaded_scored_file is not None:
                 index=["Positive", "Negative"].index(sentiment)
             )
             
-            if row['Mitigation Type'] == 'Auto Scored':
-                # Apply auto scoring logic if it's an auto-scored question
-                score = apply_scoring_logic(supplier_response, sentiment)
-            else:
-                # Allow user to manually score for user-scored questions
-                score = st.selectbox(f"Score for {row['Mitigation Question']}", [0, 1, 2, 3], key=key_score)
+            score = apply_scoring_logic(supplier_response, sentiment)
 
             # Update the Supplier Response, Sentiment, and Score in the data
             scored_data.at[index, "Supplier Response"] = supplier_response
@@ -202,24 +195,3 @@ if uploaded_scored_file is not None:
             file_name="Scored_Mitigation_Questions.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-
-# Step 3: Show Summary and Suggested Actions, only if the uploaded scored data exists
-if scored_data is not None and 'Score' in scored_data.columns:
-    st.header("Stage 3: Summary and Suggested Actions")
-    
-    # Apply the original logic for final scores based on Supplier Response and Score
-    scored_data['Final Score'] = scored_data.apply(lambda row: apply_scoring_logic(row['Supplier Response'], row['Sentiment']) if row['Mitigation Type'] == 'Auto Scored' else row['Score'], axis=1)
-
-    # Display summary of scores and recommended actions
-    st.subheader("Final Scoring Summary")
-    st.dataframe(scored_data)
-
-    # Suggested actions based on scores
-    st.subheader("Suggested Actions")
-    for index, row in scored_data.iterrows():
-        if row['Final Score'] == 0:
-            st.warning(f"Question: {row['Mitigation Question']} - **Escalation Recommended**")
-        elif row['Final Score'] == 3:
-            st.success(f"Question: {row['Mitigation Question']} - **No Escalation Needed**")
-        else:
-            st.info(f"Question: {row['Mitigation Question']} - **Please review mitigation**")
