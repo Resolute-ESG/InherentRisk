@@ -177,7 +177,12 @@ if uploaded_scored_file is not None:
                 index=["Positive", "Negative"].index(sentiment)
             )
             
-            score = apply_scoring_logic(supplier_response, sentiment)
+            if row['Mitigation Type'] == 'Auto Scored':
+                # Apply auto scoring logic if it's an auto-scored question
+                score = apply_scoring_logic(supplier_response, sentiment)
+            else:
+                # Allow user to manually score for user-scored questions
+                score = st.selectbox(f"Score for {row['Mitigation Question']}", [0, 1, 2, 3], key=key_score)
 
             # Update the Supplier Response, Sentiment, and Score in the data
             scored_data.at[index, "Supplier Response"] = supplier_response
@@ -201,18 +206,11 @@ if scored_data is not None and 'Score' in scored_data.columns:
     st.header("Stage 3: Summary and Suggested Actions")
     
     # Apply the original logic for final scores based on Supplier Response and Score
-    scored_data['Final Score'] = scored_data.apply(lambda row: apply_scoring_logic(row['Supplier Response'], row['Sentiment']), axis=1)
+    scored_data['Final Score'] = scored_data.apply(lambda row: apply_scoring_logic(row['Supplier Response'], row['Sentiment']) if row['Mitigation Type'] == 'Auto Scored' else row['Score'], axis=1)
 
     # Display summary of scores and recommended actions
     st.subheader("Final Scoring Summary")
     st.dataframe(scored_data)
 
     # Suggested actions based on scores
-    st.subheader("Suggested Actions")
-    for index, row in scored_data.iterrows():
-        if row['Final Score'] == 0:
-            st.warning(f"Question: {row['Mitigation Question']} - **Escalation Recommended**")
-        elif row['Final Score'] == 3:
-            st.success(f"Question: {row['Mitigation Question']} - **No Escalation Needed**")
-        else:
-            st.info(f"Question: {row['Mitigation Question']} - **Please review mitigation**")
+    st.subheader("Suggested
