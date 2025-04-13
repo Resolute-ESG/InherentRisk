@@ -79,7 +79,7 @@ if uploaded_file is not None:
         # Add Supplier Response and Score columns (empty for now)
         mitigation_questions_to_ask['Supplier Response'] = 'Pending'
         mitigation_questions_to_ask['Sentiment'] = 'Pending'  # Add Sentiment column
-        mitigation_questions_to_ask['Score'] = 0
+        mitigation_questions_to_ask['Score'] = 0  # Add Score column here
 
         # Allow the user to download the mitigation questions
         if not mitigation_questions_to_ask.empty:
@@ -96,6 +96,7 @@ if uploaded_file is not None:
 st.header("Stage 2: Upload the Mitigation Questions for Scoring File")
 
 uploaded_scored_file = st.file_uploader("Upload the Mitigation Questions for Scoring file", type="xlsx")
+scored_data = None
 if uploaded_scored_file is not None:
     # Load the uploaded file
     scored_data = pd.read_excel(uploaded_scored_file, sheet_name="Mitigation Questions")
@@ -108,9 +109,6 @@ if uploaded_scored_file is not None:
     if "Score" not in scored_data.columns:
         scored_data['Score'] = 0  # Add if missing
     
-    # Debugging: Print column names to verify
-    st.write("Columns in uploaded data:", scored_data.columns)
-
     # Display the first few rows of the uploaded data
     st.write("Mitigation Questions uploaded successfully.")
     st.dataframe(scored_data.head())  # Display the first few rows of the uploaded data
@@ -143,10 +141,10 @@ if uploaded_scored_file is not None:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-# Step 3: Show Summary and Suggested Actions
-st.header("Stage 3: Summary and Suggested Actions")
-
-if 'Score' in scored_data.columns:
+# Step 3: Show Summary and Suggested Actions, only if the uploaded scored data exists
+if scored_data is not None and 'Score' in scored_data.columns:
+    st.header("Stage 3: Summary and Suggested Actions")
+    
     # Apply the original logic for final scores based on Supplier Response and Score
     scored_data['Final Score'] = scored_data.apply(apply_scoring_logic, axis=1)
 
