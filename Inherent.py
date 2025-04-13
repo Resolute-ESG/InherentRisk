@@ -76,6 +76,9 @@ if uploaded_file is not None:
         if 'responses' not in st.session_state:
             st.session_state['responses'] = []
 
+        if 'scores' not in st.session_state:
+            st.session_state['scores'] = []
+
         # Generate Mitigation Questions based on Inherent Risk responses (only for 'Yes')
         responses = []
         for index, row in inherent_data.iterrows():
@@ -174,12 +177,7 @@ if uploaded_scored_file is not None:
                 index=["Positive", "Negative"].index(sentiment)
             )
             
-            score = st.selectbox(
-                f"Score for {row['Mitigation Question']}", 
-                [0, 1, 2, 3], 
-                key=key_score, 
-                index=[0, 1, 2, 3].index(row['Score'])
-            )
+            score = apply_scoring_logic(supplier_response, sentiment)
 
             # Update the Supplier Response, Sentiment, and Score in the data
             scored_data.at[index, "Supplier Response"] = supplier_response
