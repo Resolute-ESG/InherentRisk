@@ -184,4 +184,19 @@ if uploaded_scored_file is not None:
         st.dataframe(scored_data)
 
         # Option to download the file with supplier responses and scores
-       
+        st.download_button(
+            label="Download Scored Mitigation Questions",
+            data=to_excel(scored_data, sheet_name="Scored Mitigation Questions"),
+            file_name="Scored_Mitigation_Questions.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+# Step 3: Show Summary and Suggested Actions, only if the uploaded scored data exists
+if scored_data is not None and 'Score' in scored_data.columns:
+    st.header("Stage 3: Summary and Suggested Actions")
+    
+    # Apply the original logic for final scores based on Supplier Response and Score
+    scored_data['Final Score'] = scored_data.apply(apply_scoring_logic, axis=1)
+
+    # Display summary of scores and recommended actions
+    st.subheader("
